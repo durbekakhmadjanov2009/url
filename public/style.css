@@ -2,34 +2,105 @@ body {
     background: #0f172a;
     color: white;
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
 .container {
-    width: 400px;
-    margin: 100px auto;
+    width: 90%;
+    max-width: 500px;
+    margin: 50px auto;
     padding: 20px;
     background: #1e293b;
     border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
 input, button {
     width: 100%;
     padding: 10px;
     margin-top: 10px;
+    border-radius: 5px;
+    border: none;
 }
 
 button {
     background: #22c55e;
-    border: none;
     cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #16a34a;
+}
+
+.clear-btn {
+    background: #ef4444;
+    margin-top: 5px;
+}
+
+.clear-btn:hover {
+    background: #b91c1c;
+}
+
+#output {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.url-item {
+    background: #111827;
+    padding: 10px;
+    border-radius: 5px;
+    word-break: break-word;
+}
+
+.url-item a {
+    color: #22c55e;
+    text-decoration: none;
     font-weight: bold;
 }
 
-pre {
-    margin-top: 15px;
-    background: black;
-    padding: 10px;
-    max-height: 300px;
-    overflow: auto;
+.url-item a:hover {
+    text-decoration: underline;
+}
+
+.url-item span {
+    display: block;
     font-size: 12px;
+    color: #94a3b8;
+    margin-top: 3px;
+}
+.url-item {
+    background: #111827;
+    padding: 10px;
+    border-radius: 5px;
+    word-break: break-word;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.url-item img, .url-item video {
+    border-radius: 5px;
+    max-height: 300px;
+    object-fit: contain;
+}
+.remove-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 12px;
+    align-self: flex-start;
+}
+
+.remove-btn:hover {
+    background: #b91c1c;
 }

@@ -21,7 +21,7 @@ if (!fs.existsSync(JSON_FILE) || fs.readFileSync(JSON_FILE, 'utf8').trim() === '
     fs.writeJsonSync(JSON_FILE, []);
 }
 
-// Multer disk storage
+// Multer disk storage (faylni uploads papkaga saqlaydi)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, UPLOAD_DIR),
     filename: (req, file, cb) => {
@@ -38,7 +38,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         const file = req.file;
         if (!file) return res.status(400).send('Fayl kerak!');
 
-        // URL har requestga qarab hosil bo'ladi
+        // Har requestga qarab real URL hosil qilamiz
         const url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
 
         // JSON ga yozish
@@ -67,7 +67,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// /uploads papkasini static qilish
+// /uploads papkasini static qilish, shunda faylni browser orqali olish mumkin
 app.use('/uploads', express.static(UPLOAD_DIR));
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

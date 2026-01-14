@@ -2,19 +2,20 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <title>Media → JSON</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media → URL</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="container">
-    <h2>Rasm / Video JSON ga yozish</h2>
+    <h2>Rasm / Video yuklash va URL ko‘rsatish</h2>
     
-    <!-- URL input olib tashlandi -->
     <input type="file" id="file" accept="image/*,video/*">
     <button onclick="uploadFile()">Yuklash</button>
+    <button onclick="clearList()" class="clear-btn">Barchasini tozalash</button>
 
     <h3>Natija</h3>
-    <pre id="output"></pre>
+    <div id="output"></div>
 </div>
 
 <script src="script.js"></script>

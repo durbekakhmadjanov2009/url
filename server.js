@@ -3,33 +3,21 @@ const multer = require('multer');
 const fs = require('fs-extra');
 const cors = require('cors');
 const crypto = require('crypto');
-const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
+app.use(express.static('public'));
 app.use(express.json());
 app.use(cors());
 
-// uploads papkasi bo'lmasa yaratamiz
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
-fs.ensureDirSync(UPLOAD_DIR);
-
-// JSON fayl
 const JSON_FILE = 'pictures.json';
 if (!fs.existsSync(JSON_FILE) || fs.readFileSync(JSON_FILE, 'utf8').trim() === '') {
     fs.writeJsonSync(JSON_FILE, []);
 }
 
-// Multer disk storage (faylni uploads papkaga saqlaydi)
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-    filename: (req, file, cb) => {
-        const shortId = crypto.randomBytes(5).toString('hex');
-        const ext = file.originalname.split('.').pop();
-        cb(null, `${shortId}.${ext}`);
-    }
-});
+// Multer memory storage
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Yuklash endpoint
@@ -38,8 +26,12 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         const file = req.file;
         if (!file) return res.status(400).send('Fayl kerak!');
 
-        // Har requestga qarab real URL hosil qilamiz
-        const url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+        const base64 = file.buffer.toString('base64');
+
+        // Qisqa ID yaratish
+        const shortId = crypto.randomBytes(5).toString('hex');
+        const ext = file.mimetype.split("/")[1];
+        const generatedURL = `${req.protocol}://${req.get('host')}/uploads/${shortId}.${ext}`;
 
         // JSON ga yozish
         let json = [];
@@ -51,10 +43,10 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         }
 
         const newEntry = {
-            id: file.filename.split('.')[0],
-            url: url,
+            id: shortId,
+            url: generatedURL,
             type: file.mimetype,
-            filename: file.filename
+            data: base64
         };
 
         json.push(newEntry);
@@ -67,7 +59,30 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// /uploads papkasini static qilish, shunda faylni browser orqali olish mumkin
-app.use('/uploads', express.static(UPLOAD_DIR));
+// Dinamik /uploads/:id endpoint
+app.get('/uploads/:id', async (req, res) => {
+    try {
+        const idWithExt = req.params.id; // masalan 53af0eff15.jpeg
+        const id = idWithExt.split('.')[0];
+        const ext = idWithExt.split('.')[1];
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+        const json = await fs.readJson(JSON_FILE);
+        const entry = json.find(e => e.id === id && e.type.includes(ext));
+
+        if (!entry) return res.status(404).send('Fayl topilmadi');
+
+        // Base64 → Buffer
+        const buffer = Buffer.from(entry.data, 'base64');
+
+        res.writeHead(200, {
+            'Content-Type': entry.type,
+            'Content-Length': buffer.length
+        });
+        res.end(buffer);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Serverda xatolik yuz berdi!");
+    }
+});
+
+app.listen(PORT, () => console.log(`Server running: http://localhost:${PORT}`));

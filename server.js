@@ -8,9 +8,6 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Sizning production URL (Railway)
-const BASE_URL = process.env.BASE_URL || 'http://url-production-163c.up.railway.app';
-
 app.use(express.json());
 app.use(cors());
 
@@ -18,6 +15,7 @@ app.use(cors());
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 fs.ensureDirSync(UPLOAD_DIR);
 
+// JSON fayl
 const JSON_FILE = 'pictures.json';
 if (!fs.existsSync(JSON_FILE) || fs.readFileSync(JSON_FILE, 'utf8').trim() === '') {
     fs.writeJsonSync(JSON_FILE, []);
@@ -40,7 +38,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         const file = req.file;
         if (!file) return res.status(400).send('Fayl kerak!');
 
-        // Production URL hosil qilindi
+        // BASE_URL har requestga qarab hosil bo'ladi
+        const BASE_URL = `${req.protocol}://${req.headers.host}`;
         const generatedURL = `${BASE_URL}/uploads/${file.filename}`;
 
         // JSON ga yozish
@@ -54,7 +53,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
         const newEntry = {
             id: file.filename.split('.')[0],
-            url: generatedURL,  // endi bu production link
+            url: generatedURL,
             type: file.mimetype,
             filename: file.filename
         };
@@ -72,4 +71,4 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 // /uploads papkasini static qilish
 app.use('/uploads', express.static(UPLOAD_DIR));
 
-app.listen(PORT, () => console.log(`Server running: ${BASE_URL}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -38,9 +38,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         const file = req.file;
         if (!file) return res.status(400).send('Fayl kerak!');
 
-        // BASE_URL har requestga qarab hosil bo'ladi
-        const BASE_URL = `${req.protocol}://${req.headers.host}`;
-        const generatedURL = `${BASE_URL}/uploads/${file.filename}`;
+        // URL har requestga qarab hosil bo'ladi
+        const url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
 
         // JSON ga yozish
         let json = [];
@@ -53,7 +52,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
         const newEntry = {
             id: file.filename.split('.')[0],
-            url: generatedURL,
+            url: url,
             type: file.mimetype,
             filename: file.filename
         };

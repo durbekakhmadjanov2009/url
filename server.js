@@ -3,21 +3,35 @@ const multer = require('multer');
 const fs = require('fs-extra');
 const cors = require('cors');
 const crypto = require('crypto');
+const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(express.static('public'));
+// Sizning production URL (Railway)
+const BASE_URL = process.env.BASE_URL || 'http://url-production-163c.up.railway.app';
+
 app.use(express.json());
 app.use(cors());
+
+// uploads papkasi bo'lmasa yaratamiz
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+fs.ensureDirSync(UPLOAD_DIR);
 
 const JSON_FILE = 'pictures.json';
 if (!fs.existsSync(JSON_FILE) || fs.readFileSync(JSON_FILE, 'utf8').trim() === '') {
     fs.writeJsonSync(JSON_FILE, []);
 }
 
-// Multer memory storage
-const storage = multer.memoryStorage();
+// Multer disk storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    filename: (req, file, cb) => {
+        const shortId = crypto.randomBytes(5).toString('hex');
+        const ext = file.originalname.split('.').pop();
+        cb(null, `${shortId}.${ext}`);
+    }
+});
 const upload = multer({ storage });
 
 // Yuklash endpoint
@@ -26,12 +40,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         const file = req.file;
         if (!file) return res.status(400).send('Fayl kerak!');
 
-        const base64 = file.buffer.toString('base64');
-
-        // Qisqa ID yaratish
-        const shortId = crypto.randomBytes(5).toString('hex');
-        const ext = file.mimetype.split("/")[1];
-        const generatedURL = `http://localhost:${PORT}/uploads/${shortId}.${ext}`;
+        // Production URL hosil qilindi
+        const generatedURL = `${BASE_URL}/uploads/${file.filename}`;
 
         // JSON ga yozish
         let json = [];
@@ -43,10 +53,10 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         }
 
         const newEntry = {
-            id: shortId,
-            url: generatedURL,
+            id: file.filename.split('.')[0],
+            url: generatedURL,  // endi bu production link
             type: file.mimetype,
-            data: base64
+            filename: file.filename
         };
 
         json.push(newEntry);
@@ -59,30 +69,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// Dinamik /uploads/:id endpoint
-app.get('/uploads/:id', async (req, res) => {
-    try {
-        const idWithExt = req.params.id; // masalan 53af0eff15.jpeg
-        const id = idWithExt.split('.')[0];
-        const ext = idWithExt.split('.')[1];
+// /uploads papkasini static qilish
+app.use('/uploads', express.static(UPLOAD_DIR));
 
-        const json = await fs.readJson(JSON_FILE);
-        const entry = json.find(e => e.id === id && e.type.includes(ext));
-
-        if (!entry) return res.status(404).send('Fayl topilmadi');
-
-        // Base64 → Buffer
-        const buffer = Buffer.from(entry.data, 'base64');
-
-        res.writeHead(200, {
-            'Content-Type': entry.type,
-            'Content-Length': buffer.length
-        });
-        res.end(buffer);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Serverda xatolik yuz berdi!");
-    }
-});
-
-app.listen(PORT, () => console.log(`Server running: http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server running: ${BASE_URL}`));

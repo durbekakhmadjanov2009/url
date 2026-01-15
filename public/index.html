@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Media → URL</title>
+    <title>Media Upload</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="container">
-    <h2>Rasm / Video yuklash va URL ko‘rsatish</h2>
+    <h2>Rasm / Video Yuklash</h2>
     
-    <input type="file" id="file" accept="image/*,video/*">
-    <button onclick="uploadFile()">Yuklash</button>
+    <div id="drop-area">
+        <p>Faylni shu yerga torting yoki tanlang</p>
+        <input type="file" id="file" accept="image/*,video/*">
+    </div>
+
+    <button id="upload-btn">Yuklash</button>
     <button onclick="clearList()" class="clear-btn">Barchasini tozalash</button>
 
     <h3>Natija</h3>

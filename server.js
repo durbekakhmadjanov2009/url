@@ -20,35 +20,21 @@ if (!fs.existsSync(JSON_FILE) || fs.readFileSync(JSON_FILE, 'utf8').trim() === '
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Yuklash endpoint
+// Fayl yuklash
 app.post('/upload', upload.single('file'), async (req, res) => {
     try {
         const file = req.file;
         if (!file) return res.status(400).send('Fayl kerak!');
 
         const base64 = file.buffer.toString('base64');
-
-        // Qisqa ID yaratish
         const shortId = crypto.randomBytes(5).toString('hex');
         const ext = file.mimetype.split("/")[1];
         const generatedURL = `${req.protocol}://${req.get('host')}/uploads/${shortId}.${ext}`;
 
-        // JSON ga yozish
         let json = [];
-        try {
-            json = await fs.readJson(JSON_FILE);
-            if (!Array.isArray(json)) json = [];
-        } catch {
-            json = [];
-        }
+        try { json = await fs.readJson(JSON_FILE); if (!Array.isArray(json)) json = []; } catch { json = []; }
 
-        const newEntry = {
-            id: shortId,
-            url: generatedURL,
-            type: file.mimetype,
-            data: base64
-        };
-
+        const newEntry = { id: shortId, url: generatedURL, type: file.mimetype, data: base64 };
         json.push(newEntry);
         await fs.writeJson(JSON_FILE, json, { spaces: 2 });
 
@@ -59,26 +45,49 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// Dinamik /uploads/:id endpoint
+// Fayllarni olish
+app.get('/files', async (req, res) => {
+    try {
+        let json = [];
+        try { json = await fs.readJson(JSON_FILE); if (!Array.isArray(json)) json = []; } catch { json = []; }
+        const result = json.map(e => ({ id: e.id, url: e.url, type: e.type }));
+        res.json(result);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Serverda xatolik yuz berdi!");
+    }
+});
+
+// Faylni ko‘rsatish
 app.get('/uploads/:id', async (req, res) => {
     try {
-        const idWithExt = req.params.id; // masalan 53af0eff15.jpeg
-        const id = idWithExt.split('.')[0];
-        const ext = idWithExt.split('.')[1];
-
+        const [id, ext] = req.params.id.split('.');
         const json = await fs.readJson(JSON_FILE);
         const entry = json.find(e => e.id === id && e.type.includes(ext));
-
         if (!entry) return res.status(404).send('Fayl topilmadi');
 
-        // Base64 → Buffer
         const buffer = Buffer.from(entry.data, 'base64');
-
-        res.writeHead(200, {
-            'Content-Type': entry.type,
-            'Content-Length': buffer.length
-        });
+        res.writeHead(200, { 'Content-Type': entry.type, 'Content-Length': buffer.length });
         res.end(buffer);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Serverda xatolik yuz berdi!");
+    }
+});
+
+// Faylni o‘chirish
+app.delete('/upload/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        let json = await fs.readJson(JSON_FILE);
+        const entry = json.find(e => e.id === id);
+        if (!entry) return res.status(404).send("Fayl topilmadi");
+
+        // JSON-dan o'chirish
+        json = json.filter(e => e.id !== id);
+        await fs.writeJson(JSON_FILE, json, { spaces: 2 });
+
+        res.json({ message: "Fayl o‘chirildi!" });
     } catch (err) {
         console.error(err);
         res.status(500).send("Serverda xatolik yuz berdi!");
